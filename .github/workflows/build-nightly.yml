@@ -178,6 +178,9 @@ jobs:
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build-docker:
+    permissions:
+      contents: read
+      packages: write
     if: github.event_name != 'schedule' || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
     name: Docker
     needs: set-envs
@@ -186,6 +189,9 @@ jobs:
       OWNER_LC: ${{ needs.set-envs.outputs.OWNER_LC }}
 
   build-devices:
+    permissions:
+      contents: read
+      actions: write
     if: (github.event_name != 'schedule') || (github.repository == 'ROCKNIX/distribution' && github.ref_name == 'next')
     name: Build Devices
     needs:
