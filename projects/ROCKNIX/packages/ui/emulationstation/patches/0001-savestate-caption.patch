@@ -1,5 +1,5 @@
 diff --git a/es-app/src/guis/GuiSaveState.cpp b/es-app/src/guis/GuiSaveState.cpp
-index 9a21a26..d5734b2 100644
+index 9a21a26..d1f75ad 100644
 --- a/es-app/src/guis/GuiSaveState.cpp
 +++ b/es-app/src/guis/GuiSaveState.cpp
 @@ -14,7 +14,7 @@ static int slots = 6; // 5;
@@ -7,7 +7,7 @@ index 9a21a26..d5734b2 100644
  GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<void(SaveState* state)>& callback) :
  	GuiComponent(window), mGrid(nullptr), mBackground(window, ":/frame.png"),
 -	mLayout(window, Vector2i(3, 5)), mTitle(nullptr)
-+	mLayout(window, Vector2i(3, 6)), mTitle(nullptr)
++	mLayout(window, Vector2i(3, 7)), mTitle(nullptr)
  {
  	mGame = game;
  	mRepository = game->getSourceFileData()->getSystem()->getSaveStateRepository();
@@ -20,13 +20,44 @@ index 9a21a26..d5734b2 100644
 +		auto font = Font::get(theme->TextSmall.font->getSize(), theme->Text.font->getPath());
 +		mCaption = std::make_shared<TextComponent>(mWindow, "", font, theme->Text.selectedColor, ALIGN_CENTER);
 +		mCaption->setMultiLine(TextComponent::MultiLineType::SINGLELINE);
-+		mLayout.setEntry(mCaption, Vector2i(1, 4), false, true);
++		mLayout.setEntry(mCaption, Vector2i(1, 5), false, true);
 +	}
 +
  	addChild(&mBackground);
  	addChild(&mLayout);
  	
-@@ -65,7 +73,7 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
+@@ -43,6 +51,11 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
+ 	float sh = (float)Math::min(Renderer::getScreenHeight(), Renderer::getScreenWidth());
+ 	sh = (float) theme->TextSmall.font->getSize() / sh;
+ 
++	float layoutScale = std::min(Renderer::getScreenWidth(), Renderer::getScreenHeight()) / 320.0f;
++	std::string artworkTileSize = std::to_string(64 * layoutScale / Renderer::getScreenWidth())
++		+ " " + std::to_string(58 * layoutScale / Renderer::getScreenHeight());
++	std::string artworkPadding = std::to_string(6 * layoutScale);
++
+ 	std::string xml =
+ 		"<theme defaultView=\"Tiles\">"
+ 		"<formatVersion>7</formatVersion>"
+@@ -50,31 +63,31 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
+ 		"<imagegrid name=\"gamegrid\">"
+ 		"  <margin>0.01 0.02</margin>"
+ 		"  <padding>0 0</padding>"
+-		"  <scrollDirection>horizontal</scrollDirection>"
+-		"  <autoLayout>" + std::to_string(slots * screenProportion / cellProportion) +" 1</autoLayout>"
++		"  <scrollDirection>horizontal</scrollDirection>" +
++		(mCaption ? std::string() : "  <autoLayout>" + std::to_string(slots * screenProportion / cellProportion) + " 1</autoLayout>") +
+ 		"  <autoLayoutSelectedZoom>1</autoLayoutSelectedZoom>"
+ 		"  <animateSelection>false</animateSelection>"
+ 		"  <centerSelection>false</centerSelection>"		
+ 		"</imagegrid>"		
+ 		"<gridtile name=\"default\">"
+-		"  <backgroundColor>FFFFFF00</backgroundColor>"
+-		"  <padding>8 8</padding>"
++		"  <backgroundColor>FFFFFF00</backgroundColor>" +
++		(mCaption ? "  <size>" + artworkTileSize + "</size><padding>" + artworkPadding + " " + artworkPadding + "</padding>" : std::string("  <padding>8 8</padding>")) +
+ 		"  <imageColor>FFFFFFFF</imageColor>"
+ 		"</gridtile>"		
+ 		"<gridtile name=\"selected\">"
  		"  <backgroundColor>" + Utils::String::toHexString(theme->Text.selectorColor) + "</backgroundColor>"
  		"</gridtile>"
  		"<text name=\"gridtile\">"
@@ -35,8 +66,10 @@ index 9a21a26..d5734b2 100644
  		"  <backgroundColor>00000000</backgroundColor>"
  		"  <fontPath>" + theme->Text.font->getPath() +"</fontPath>"
  		"  <fontSize>" + std::to_string(sh) + "</fontSize>"
-@@ -74,7 +82,7 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
- 		"  <size>1 0.30</size>"
+ 		"  <alignment>center</alignment>"
+ 		"  <singleLineScroll>false</singleLineScroll>"
+-		"  <size>1 0.30</size>"
++		"  <size>" + std::string(mCaption ? "0 0" : "1 0.30") + "</size>"
  		"</text>"
  		"<text name=\"gridtile:selected\">"
 -		"  <color>" + Utils::String::toHexString(theme->Text.selectedColor) + "</color>"
@@ -44,7 +77,7 @@ index 9a21a26..d5734b2 100644
  		"</text>"
  		"<image name=\"gridtile.image\">"
  		"  <linearSmooth>true</linearSmooth>"		
-@@ -93,7 +101,7 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
+@@ -93,7 +106,7 @@ GuiSaveState::GuiSaveState(Window* window, FileData* game, const std::function<v
  
  	//mGrid->setSize(Renderer::getScreenWidth(), Renderer::getScreenHeight());
  	mGrid->applyTheme(mTheme, "grid", "gamegrid", 0);
@@ -53,7 +86,7 @@ index 9a21a26..d5734b2 100644
  
  	loadGrid();
  	centerWindow();
-@@ -122,13 +130,13 @@ void GuiSaveState::loadGrid()
+@@ -122,13 +135,13 @@ void GuiSaveState::loadGrid()
  		});
  
  
@@ -69,7 +102,7 @@ index 9a21a26..d5734b2 100644
  	}
  
  	for (auto item : states)
-@@ -150,6 +158,20 @@ void GuiSaveState::loadGrid()
+@@ -150,6 +163,20 @@ void GuiSaveState::loadGrid()
  		else 
  			mGrid->add(_("SLOT") + std::string(" ") + std::to_string(item->slot) + std::string("\r\n") + item->creationDate.toLocalTimeString() + coreinfo, item->getScreenShot(), SaveStateItem(item));
  	}
@@ -90,13 +123,17 @@ index 9a21a26..d5734b2 100644
  }
  
  void GuiSaveState::onSizeChanged()
-@@ -186,9 +208,11 @@ void GuiSaveState::onSizeChanged()
+@@ -186,9 +213,15 @@ void GuiSaveState::onSizeChanged()
  		mLayout.setRowHeightPerc(1, mTitle->getFont()->getHeight(2.0f) / mSize.y());
  
  	mLayout.setRowHeightPerc(2, 0.02);
 -	mLayout.setRowHeightPerc(4, helpSize );
-+	mLayout.setRowHeightPerc(4, mCaption ? mCaption->getFont()->getHeight(1.0f) / mSize.y() : 0.0f);
-+	mLayout.setRowHeightPerc(5, helpSize);
++	float layoutScale = std::min(Renderer::getScreenWidth(), Renderer::getScreenHeight()) / 320.0f;
++	if (mCaption)
++		mLayout.setRowHeight(3, 58 * layoutScale);
++	mLayout.setRowHeight(4, mCaption ? 6 * layoutScale : 0);
++	mLayout.setRowHeight(5, mCaption ? mCaption->getFont()->getHeight(1.0f) : 0);
++	mLayout.setRowHeightPerc(6, helpSize);
  
  	mLayout.setSize(mSize);
 +	updateCaption();
